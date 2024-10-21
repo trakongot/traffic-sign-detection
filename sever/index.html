@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>YOLOv8 Object Detection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #ffffff;
+            color: #1c1c1e;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            border: 0 solid #e5e7eb;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #000000;
+        }
+
+        .search-section,
+        .upload-section {
+            margin-bottom: 20px;
+        }
+
+        .search-section input,
+        .upload-section input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e4e4e7;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            background-color: #fff;
+            color: #454343;
+        }
+
+        .search-section input::placeholder,
+        .upload-section input::placeholder {
+            color: #b0b0b0;
+        }
+
+        .upload-label {
+            margin: 12px 0;
+            display: block;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #18181b;
+            border: none;
+            border-radius: 5px;
+            color: #fafafa;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #18181be6;
+        }
+
+        .preview-section {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .preview-section img {
+            margin: 5px;
+            width: 150px;
+            height: 150px;
+            object-fit: contain;
+            display: block;
+            border: 1px solid #4b4b4d;
+            border-radius: 5px;
+        }
+
+        .submit-btn {}
+
+        canvas {
+            margin: 10px auto 30px;
+            border-radius: 5px;
+            border: 1px solid #e4e4e7;
+            background-color: #fff;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            button {
+                font-size: 14px;
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Traffic Sign Recognition</h1>
+
+        <div class="search-section">
+            <input type="text" id="searchInput" placeholder="Search traffic signs by name..." onkeyup="searchSign()">
+            <button onclick="searchSign()">Search</button>
+        </div>
+
+        <div class="upload-section">
+            <label for="uploadInput" class="upload-label">Upload Traffic Sign Images</label>
+            <input type="file" id="uploadInput" accept="image/*" multiple onchange="previewImage(event)">
+        </div>
+
+        <div class="preview-section" id="preview-section">
+            <img id="previewImage" alt="Preview" />
+            <canvas></canvas>
+        </div>
+
+        <button class="submit-btn" onclick="submitImage()">Submit</button>
+    </div>
+    <script>
+        function draw_image_and_boxes(file, boxes) {
+            const img = new Image()
+            img.src = URL.createObjectURL(file);
+            img.onload = () => {
+                const canvas = document.querySelector("canvas");
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0);
+                ctx.strokeStyle = "#00FF00";
+                ctx.lineWidth = 3;
+                ctx.font = "18px serif";
+                boxes.forEach(([x1, y1, x2, y2, label]) => {
+                    ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+                    ctx.fillStyle = "#00ff00";
+                    const width = ctx.measureText(label).width;
+                    ctx.fillRect(x1, y1, width + 10, 25);
+                    ctx.fillStyle = "#000000";
+                    ctx.fillText(label, x1, y1 + 18);
+                });
+
+                canvas.style.display = 'block';
+            }
+        }
+
+        function previewImage(event) {
+            const previewSection = document.getElementById('preview-section');
+            previewSection.innerHTML = ''; // Xóa nội dung trước đó
+            Array.from(event.target.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function () {
+                    const img = document.createElement('img');
+                    img.src = reader.result;
+                    img.style.display = 'block';
+                    previewSection.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function submitImage() {
+            var inputFile = document.getElementById('uploadInput');
+            const files = inputFile.files;
+            if (files.length === 0) {
+                alert("Please upload an image before submitting!");
+                return;
+            }
+
+            Array.from(files).forEach(async (file) => {
+                const data = new FormData();
+                data.append("image_file", file, "image_file");
+                const response = await fetch("/detect", {
+                    method: "post",
+                    body: data
+                });
+                const boxes = await response.json();
+
+                draw_image_and_boxes(file, boxes);
+            });
+        }
+    </script>
+</body>
+
+</html>
