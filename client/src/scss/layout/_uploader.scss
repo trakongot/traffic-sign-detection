@@ -361,6 +361,14 @@ input[type="file"] {
 		justify-content : center;
 		align-items     : center;
 		z-index         : 1000;
+
+		img {
+			width     : auto;
+			height    : auto;
+			max-width : 90%;
+			max-height: 90%;
+			object-fit: cover;
+		}
 	}
 
 

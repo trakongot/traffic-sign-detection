@@ -2089,6 +2089,13 @@ input[type=file] {
   align-items: center;
   z-index: 1000;
 }
+.result-container .lightbox img {
+  width: auto;
+  height: auto;
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: cover;
+}
 .result-container.active .lightbox {
   display: flex;
 }
@@ -2132,6 +2139,7 @@ h1 {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 20px;
+  margin-bottom: 30px;
 }
 .traffic-signs-list .sign-item {
   background-color: #ffffff;

@@ -199,8 +199,9 @@ document.getElementById('tryAI-button').addEventListener('click', async function
     const file = files[0];
     const response = await uploadImage(file);
     const boxes = await response.json();
-
     drawImageAndBoxes(file, boxes);
+    btn.classList.remove('loading-active');
+    btn.disabled = false;
   } catch (error) {
     console.error("Error uploading image:", error);
     alert("Error uploading image.");
@@ -208,26 +209,41 @@ document.getElementById('tryAI-button').addEventListener('click', async function
     btn.disabled = false;
   }
 });
-
-async function uploadImage(file) {
-
+async function uploadImage(file, timeoutDuration = 20000) {
+  const controller = new AbortController();
+  const signal = controller.signal;
 
   const data = new FormData();
   data.append("image_file", file);
 
-  const response = await fetch("http://localhost:8080/detect", {
-    method: "POST",
-    body: data
-  });
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+  }, timeoutDuration);
 
-  if (!response.ok) {
-    throw new Error('Network response was not ok');
+  try {
+    const response = await fetch("http://localhost:8080/detect", {
+      method: "POST",
+      body: data,
+      signal: signal
+    });
+    console.log(response)
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    return response;
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      console.error('Request was aborted');
+    } else {
+      console.error('Fetch error:', error);
+    }
+    throw error;
   }
-  return response;
 }
-
 function drawImageAndBoxes(file, boxes) {
-  const btn = document.getElementById('tryAI-button');
   const img = new Image();
   img.src = URL.createObjectURL(file);
 
@@ -238,35 +254,33 @@ function drawImageAndBoxes(file, boxes) {
     canvas.height = img.height;
 
     ctx.drawImage(img, 0, 0);
-    ctx.strokeStyle = "#00FF00";
-    ctx.lineWidth = 3;
-    ctx.font = "18px serif";
 
-    boxes.forEach(([x1, y1, x2, y2, label]) => {
-      ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
-      drawLabel(ctx, label, x1, y1);
-    });
-
-    updateResults(canvas, boxes[0][4]);
-    btn.classList.remove('loading-active');
-    btn.disabled = false;
+    if (boxes.length > 0) {
+      ctx.strokeStyle = "#00FF00";
+      ctx.lineWidth = 3;
+      ctx.font = "18px serif";
+      boxes.forEach(([x1, y1, x2, y2, label]) => {
+        ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+        const width = ctx.measureText(label).width;
+        ctx.fillStyle = "#00ff00";
+        ctx.fillRect(x1, y1, width + 10, 25);
+        ctx.fillStyle = "#000000";
+        ctx.fillText(label, x1, y1 + 18);
+      });
+      updateResults(canvas.toDataURL("image/png"), boxes[0][4]);
+    } else {
+      updateResults(img.src);
+    }
   };
 }
 
-function drawLabel(ctx, label, x, y) {
-  ctx.fillStyle = "#00ff00";
-  const width = ctx.measureText(label).width;
-  ctx.fillRect(x, y, width + 10, 25);
-  ctx.fillStyle = "#000000";
-  ctx.fillText(label, x, y + 18);
-}
-function updateResults(canvas, nameSign) {
-  document.querySelector('.name-sign').innerHTML = nameSign;
+function updateResults(imageSrc, nameSign = "") {
   const resultImage = document.querySelector('.result-image');
-  resultImage.style.backgroundImage = `url(${canvas.toDataURL("image/png")})`;
+  resultImage.style.backgroundImage = `url(${imageSrc})`;
   resultImage.style.cursor = "pointer";
   resultImage.classList.remove('no-zoom');
 }
+
 
 document.querySelector('.result-image').addEventListener('click', function () {
   const bgImage = getComputedStyle(this).backgroundImage;
@@ -405,6 +419,121 @@ const trafic_signs = [
     name: "Điểm kiểm tra phương tiện",
     url: "./dist/images/trafic_signs/CustomsCheckpoint.png",
     desc: ""
+  },
+  {
+    name: 'Chỉ xe máy',
+    url: './dist/images/trafic_signs/mortocycle-only.png',
+    desc: '',
+  },
+  {
+    name: 'Chướng ngại vật trên đường',
+    url: './dist/images/trafic_signs/obstancle-on-the-road.png',
+    desc: '',
+  },
+  {
+    name: 'Trẻ em có mặt',
+    url: './dist/images/trafic_signs/children-present.png',
+    desc: '',
+  },
+  {
+    name: 'Không có xe tải và container',
+    url: './dist/images/trafic_signs/no-trucks-and-container.png',
+    desc: '',
+  },
+  {
+    name: 'Cấm xe máy',
+    url: './dist/images/trafic_signs/no-mortocycles.png',
+    desc: '',
+  },
+  {
+    name: 'Đường Có Camera Giám Sát',
+    url: './dist/images/trafic_signs/road-with-surveillance-camera.png',
+    desc: '',
+  },
+  {
+    name: 'Cấm Rẽ Phải',
+    url: './dist/images/trafic_signs/no-right-turn.png',
+    desc: '',
+  },
+  {
+    name: 'Hàng loạt những ngã rẽ nguy hiểm',
+    url: './dist/images/trafic_signs/series-of-dangerous-turns.png',
+    desc: '',
+  },
+  {
+    name: 'Không được phép cho xe tải',
+    url: './dist/images/trafic_signs/no-container-allowed.png',
+    desc: '',
+  },
+  {
+    name: 'Cấm rẽ trái hoặc rẽ phải',
+    url: './dist/images/trafic_signs/no-left-or-right-turn.png',
+    desc: '',
+  },
+  {
+    name: 'Cấm đi thẳng và rẽ phải',
+    url: './dist/images/trafic_signs/no-straight-or-right-turn.png',
+    desc: '',
+  },
+  {
+    name: 'Nút giao với ngã ba chữ T',
+    url: './dist/images/trafic_signs/T-junction.png',
+    desc: '',
+  },
+  {
+    name: 'Giới hạn tốc độ (50km/h)',
+    url: './dist/images/trafic_signs/speed-limit-50km.png',
+    desc: '',
+  },
+  {
+    name: 'Giới hạn tốc độ (60km/h)',
+    url: './dist/images/trafic_signs/speed-limit-60km.png',
+    desc: '',
+  },
+  {
+    name: 'Giới hạn tốc độ (80km/h)',
+    url: './dist/images/trafic_signs/speed-limit-80km.png',
+    desc: '',
+  },
+  {
+    name: 'Giới hạn tốc độ (40km/h)',
+    url: './dist/images/trafic_signs/speed-limit-40km.png',
+    desc: '',
+  },
+  {
+    name: 'Rẽ trái',
+    url: './dist/images/trafic_signs/left-turn.png',
+    desc: '',
+  },
+  {
+    name: 'Nguy hiểm khác',
+    url: './dist/images/trafic_signs/other-danger.png',
+    desc: '',
+  },
+  {
+    name: 'Đi thẳng',
+    url: './dist/images/trafic_signs/go-straight.png',
+    desc: '',
+  },
+  {
+    name: 'Không đậu xe ',
+    url: './dist/images/trafic_signs/no-parking-2.png',
+    desc: '',
+  },
+  {
+    name: 'Chỉ vùng chứa Ôtô cấm quay đầu bên phải',
+    url: './dist/images/trafic_signs/no-right-turn-U-cars.png',
+    desc: '',
+  },
+  {
+    name: 'Vượt cấp với rào cản đường tàu',
+    url: './dist/images/trafic_signs/level-crossing-with-barriers.png',
+    desc: '',
+  },
+  {
+    name: 'Đèn giao thông (đỏ, xanh, vàng)',
+    url: './dist/images/trafic_signs/traffic-light.png',
+    desc: '',
   }
 ]
 const trafficSignsList = document.querySelector('#trafficSignsList');
