@@ -1,5 +1,12 @@
 # Project: Traffic Sign Detection Web Application
 
+## Demo Image
+
+![Alt text](./client/src/images/demo_2.png)
+
+![Alt text](./client/src/images/demo_1.png)
+
+
 ## Tech Stack
 
 **Client:** HTML, SASS
@@ -13,8 +20,3 @@
 - Traffic Sign Detection: Integrated YOLO (You Only Look Once) object detection model into the Flask backend to detect and classify traffic signs from uploaded images.
 - Backend with Flask: Created a Flask API to handle image uploads, traffic sign detection, and manage user interactions.
 
-## Demo Image
-
-![Alt text](./client/src/images/demo_2.png)
-
-![Alt text](./client/src/images/demo_1.png)
